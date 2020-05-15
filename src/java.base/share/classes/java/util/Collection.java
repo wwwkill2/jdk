@@ -39,9 +39,14 @@ import java.util.stream.StreamSupport;
  * specific subinterfaces like {@code Set} and {@code List}.  This interface
  * is typically used to pass collections around and manipulate them where
  * maximum generality is desired.
+ * 该接口是集合结构的根接口。一个集合代表一组对象，这组对象被称为集合的“元素”。
+ * 有些集合允许拥有重复元素，有些则不允许。有些集合是有序的，有些则是无序的。
+ * JDK本身不提供该接口的直接实现类，而是提供更具体的子接口像是Set和List的实现类。
+ * 该接口典型的使用场景是在需要最大化通用性的场景传递和操作集合（ps:多态）。
  *
  * <p><i>Bags</i> or <i>multisets</i> (unordered collections that may contain
  * duplicate elements) should implement this interface directly.
+ * 背包和多重集（允许重复元素的无序集合）应该直接实现该接口。
  *
  * <p>All general-purpose {@code Collection} implementation classes (which
  * typically implement {@code Collection} indirectly through one of its
@@ -54,12 +59,19 @@ import java.util.stream.StreamSupport;
  * There is no way to enforce this convention (as interfaces cannot contain
  * constructors) but all of the general-purpose {@code Collection}
  * implementations in the Java platform libraries comply.
+ * 所有的通用Collection实现类（实现Collection子接口的实现类）都应该提供两个标准的构造方法：
+ * 一个无参的构造方法，用来创建一个空集合，另一个是以Collection作为参数的构造方法，创建一个和参数具有相同元素的集合。
+ * 实际上，后面的构造方法允许用户复制任何集合，以需要的集合类型创造一个等价的集合。
+ * 没有办法强制（两个构造方法）这种约定（因为接口不能包含构造方法），但是Java平台的所有通用集合实现类都遵守了该约定。
  *
  * <p>Certain methods are specified to be
  * <i>optional</i>. If a collection implementation doesn't implement a
  * particular operation, it should define the corresponding method to throw
  * {@code UnsupportedOperationException}. Such methods are marked "optional
  * operation" in method specifications of the collections interfaces.
+ * 某些方法被标记为“optional”（可选的）。如果一个集合实现类没有实现一个具体的操作，
+ * 那么它应该在相应的方法定义中抛出UnsupportedOperationException异常。
+ * 这样的方法会在集合接口的方法注释中标记为“optional operation”。
  *
  * <p><a id="optional-restrictions"></a>Some collection implementations
  * have restrictions on the elements that they may contain.
@@ -75,6 +87,11 @@ import java.util.stream.StreamSupport;
  * exception or it may succeed, at the option of the implementation.
  * Such exceptions are marked as "optional" in the specification for this
  * interface.
+ * 某些集合对包含的元素可能有一些限制。例如，一些集合实现不允许空元素，一些集合则对元素类型有某种约束。
+ * 尝试向集合添加不适合的元素会抛出非受检异常，典型的例如NullPointerException或ClassCastException。
+ * 尝试查询一个不适合的元素在集合中是否存在可能会抛出异常，也可能会返回false；某些集合实现符合前者，某些实现符合后者。
+ * 更常见的是，对不适合的元素执行某项操作可能会抛出异常，也可能会成功，取决于具体的集合实现。
+ * （这种可以抛异常也可以不抛的异常）这种异常在该接口说明中被标记为"optional"。
  *
  * <p>It is up to each collection to determine its own synchronization
  * policy.  In the absence of a stronger guarantee by the
@@ -83,6 +100,8 @@ import java.util.stream.StreamSupport;
  * thread; this includes direct invocations, passing the collection to
  * a method that might perform invocations, and using an existing
  * iterator to examine the collection.
+ * 每个集合决定自己的同步策略。在不具备强一致性的集合实现类中，多线程调用集合的任意方法都会导致不可预见的后果，
+ * 包含直接调用，或者间接调用，或者使用已有的迭代器检查集合。
  *
  * <p>Many methods in Collections Framework interfaces are defined in
  * terms of the {@link Object#equals(Object) equals} method.  For example,
@@ -100,6 +119,12 @@ import java.util.stream.StreamSupport;
  * the various Collections Framework interfaces are free to take advantage of
  * the specified behavior of underlying {@link Object} methods wherever the
  * implementor deems it appropriate.
+ * 集合框架接口的许多方法定义都依据Object.equals(object)方法。
+ * 例如，contains(object o)方法的方法描述：当集合包含至少一个元素e并且满足o == null ? e == null : o.equals(e)时返回true。
+ * 这个说明不应该被解释成暗示调用contains(o)方法会引起对任意元素e调用o.equals(e)方法。
+ * 集合的实现类应该凭借避免调用equals方法来实现最优化的方法实现。例如，
+ * 首先比较两个元素的hash code（hashCode()方法保证两个对象的hash code不一致，则这两个对象一定无法通过equals比较）。
+ * 更通常的做法是，对于集合框架接口的多种实现来说，当实现者认为Object提供的方法合适时，可以自由的利用这些方法。
  *
  * <p>Some collection operations which perform recursive traversal of the
  * collection may fail with an exception for self-referential instances where
@@ -107,8 +132,12 @@ import java.util.stream.StreamSupport;
  * {@code clone()}, {@code equals()}, {@code hashCode()} and {@code toString()}
  * methods. Implementations may optionally handle the self-referential scenario,
  * however most current implementations do not do so.
+ * 某些利用递归遍历的集合操作可能会发生异常，当这个集合直接或间接的包含本身的时候。
+ * 这些操作包含clone()，equals()，hashCode()以及toString()。
+ * 实现类可以选择性的处理这种包含本身的场景，然而大多数实现并没有这么做。
  *
  * <h2><a id="view">View Collections</a></h2>
+ * ps:我翻译成表面集合
  *
  * <p>Most collections manage storage for elements they contain. By contrast, <i>view
  * collections</i> themselves do not store elements, but instead they rely on a
@@ -131,8 +160,16 @@ import java.util.stream.StreamSupport;
  * to be written through to the backing collection, and in some cases,
  * modifications to the backing collection will be visible to the Iterator
  * during iteration.
+ * 大多数集合管理元素的存储空间，相反地，表面集合本身并不存储元素，而是依赖一个支持集合去存储实际的元素。
+ * 表面集合不处理的操作，会代理给支持集合。有一些方法会返回表面集合，例如Collections.checkedCollection，
+ * Collections.synchronizedCollection，Collections.unmodifiableCollection。
+ * 还有一些表面集合提供相同元素的不同表现，例如List.subList，NavigableSet.subSet或者Map.entrySet方法。
+ * 支持集合的任意变化对表面集合都是可见的。相应地，对表面集合的变化，会写入支持集合。
+ * 尽管Iterator和ListIterator本身不是集合，但是对迭代器的修改也会写入到支持集合，并且某些场景，
+ * 支持集合的变化会对遍历中的迭代器可见。
  *
  * <h2><a id="unmodifiable">Unmodifiable Collections</a></h2>
+ * 不可修改集合
  *
  * <p>Certain methods of this interface are considered "destructive" and are called
  * "mutator" methods in that they modify the group of objects contained within
@@ -148,6 +185,12 @@ import java.util.stream.StreamSupport;
  * an exception. However, it is recommended that such cases throw an exception
  * unconditionally, as throwing only in certain cases can lead to
  * programming errors.
+ * Collection接口的某些方法被认为具有破坏性，并且被称为"mutator"，这些方法修改了集合包含的对象组。
+ * 如果集合实现不支持这些操作，方法可以抛出UnsupportedOperationException。
+ * 对原集合没有影响的方法调用，也应该抛出异常，但不是强制的。例如，现在有一个不支持add方法的集合，
+ * 当它调用addAll方法，参数是一个空集合时，会发生什么呢？0个元素的添加对集合没有任何影响，
+ * 所以这个方法不做任何事情，也不抛异常是允许的。然而，推荐做法是无条件的抛出异常，
+ * 因为特定场景才抛异常可能会引发程序错误。
  *
  * <p>An <i>unmodifiable collection</i> is a collection, all of whose
  * mutator methods (as defined above) are specified to throw
@@ -156,6 +199,9 @@ import java.util.stream.StreamSupport;
  * unmodifiable, any view collections derived from it must also be unmodifiable.
  * For example, if a List is unmodifiable, the List returned by
  * {@link List#subList List.subList} is also unmodifiable.
+ * 不可修改集合也是一个集合，只是所有可以改变集合的方法都被规定抛出UnsupportedOperationException异常。
+ * 因此不能通过调用方法来修改集合本身。对于一个正确的不可修改集合来说，衍生出的表面集合同样也必须是不可修改的。
+ * 例如，如果一个List是不可修改的，那么List.subList返回的集合同样也是不可修改的。
  *
  * <p>An unmodifiable collection is not necessarily immutable. If the
  * contained elements are mutable, the entire collection is clearly
@@ -165,8 +211,12 @@ import java.util.stream.StreamSupport;
  * the elements had been mutated, even though both lists are unmodifiable.
  * However, if an unmodifiable collection contains all immutable elements,
  * it can be considered effectively immutable.
+ * 不可修改集合并不是不可变，如果集合包含的元素是可变的，那整个集合无疑是可变的，尽管集合可能是不可修改的。
+ * 例如，假设有两个不可修改集合包含可变元素，list1.equals(list2)的调用结果可能每次都不一致。
+ * 然而，如果一个不可修改集合包含的全部元素都是不可变的，那么它可被认为是完全不可变集合。
  *
  * <h2><a id="unmodview">Unmodifiable View Collections</a></h2>
+ * 不可修改的表面集合
  *
  * <p>An <i>unmodifiable view collection</i> is a collection that is unmodifiable
  * and that is also a view onto a backing collection. Its mutator methods throw
@@ -180,6 +230,10 @@ import java.util.stream.StreamSupport;
  * {@link Collections#unmodifiableCollection Collections.unmodifiableCollection},
  * {@link Collections#unmodifiableList Collections.unmodifiableList}, and
  * related methods.
+ * 一个不可修改的表面集合，它的修改方法会抛出UnsupportedOperationException异常，就像上面描述的一样，
+ * 读取和查询方法会代理给支持集合。不可修改的表面集合好处是对支持集合提供只读的访问控制。
+ * 这对于一个组件来说是有用的，这个组件提供给用户只读的访问权限，防止他们意外的修改集合。
+ * Collections.unmodifiableCollection，Collections.unmodifiableList都能返回这种表面集合。
  *
  * <p>Note that changes to the backing collection might still be possible,
  * and if they occur, they are visible through the unmodifiable view. Thus,
@@ -187,16 +241,21 @@ import java.util.stream.StreamSupport;
  * if the backing collection of an unmodifiable view is effectively immutable,
  * or if the only reference to the backing collection is through an
  * unmodifiable view, the view can be considered effectively immutable.
+ * 注意一点，修改表面集合的支持集合仍然是可能的，而且一旦修改，修改对于表面集合也是可见的。
+ * 因此，不可修改的表面集合不是必须不可变。然而，如果一个不可修改的表面集合的支持集合是完全不可变的，
+ * 或者支持集合的唯一引用是不可修改的表面集合，那么可以认为这个表面集合是完全不可变的。
  *
  * <p>This interface is a member of the
  * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
+ * 该接口是Collections Framework的一员。
  *
  * @implSpec
  * The default method implementations (inherited or otherwise) do not apply any
  * synchronization protocol.  If a {@code Collection} implementation has a
  * specific synchronization protocol, then it must override default
  * implementations to apply that protocol.
+ * 默认的方法实现没有任何同步协议。如果实现类有具体的同步协议，那么实现类必须复写方法来应用同步协议。
  *
  * @param <E> the type of elements in this collection
  *
@@ -225,6 +284,7 @@ public interface Collection<E> extends Iterable<E> {
      * Returns the number of elements in this collection.  If this collection
      * contains more than {@code Integer.MAX_VALUE} elements, returns
      * {@code Integer.MAX_VALUE}.
+     * 返回集合中的元素个数，如果元素个数比Integer.MAX_VALUE还大，则返回Integer.MAX_VALUE
      *
      * @return the number of elements in this collection
      */
@@ -242,6 +302,7 @@ public interface Collection<E> extends Iterable<E> {
      * More formally, returns {@code true} if and only if this collection
      * contains at least one element {@code e} such that
      * {@code Objects.equals(o, e)}.
+     * 返回集合是否包含这个具体的元素。更正式一点，返回true如果存在一个元素e，使得Object.equals(o, e)返回true。
      *
      * @param o element whose presence in this collection is to be tested
      * @return {@code true} if this collection contains the specified
@@ -260,6 +321,7 @@ public interface Collection<E> extends Iterable<E> {
      * guarantees concerning the order in which the elements are returned
      * (unless this collection is an instance of some class that provides a
      * guarantee).
+     * 返回一个迭代器，不保证迭代器中的元素顺序，除非集合本身提供这种保证。
      *
      * @return an {@code Iterator} over the elements in this collection
      */
@@ -271,11 +333,15 @@ public interface Collection<E> extends Iterable<E> {
      * are returned by its iterator, this method must return the elements in
      * the same order. The returned array's {@linkplain Class#getComponentType
      * runtime component type} is {@code Object}.
+     * 返回一个包含集合所有元素的数组。如果该集合的迭代器返回有序的元素，那么该方法要返回相同的元素顺序。
+     * 返回的数组类型是Object。
      *
      * <p>The returned array will be "safe" in that no references to it are
      * maintained by this collection.  (In other words, this method must
      * allocate a new array even if this collection is backed by an array).
      * The caller is thus free to modify the returned array.
+     * 返回的数组是安全的，意味着集合不维护返回数组的任何引用，换句话说，
+     * 该方法必须分配一个新的数组哪怕是集合本身由数组保存元素。调用方因此可以随意修改返回的数组。
      *
      * @apiNote
      * This method acts as a bridge between array-based and collection-based APIs.
@@ -283,6 +349,8 @@ public interface Collection<E> extends Iterable<E> {
      * Use {@link #toArray(Object[]) toArray(T[])} to reuse an existing
      * array, or use {@link #toArray(IntFunction)} to control the runtime type
      * of the array.
+     * 该方法扮演一个桥梁角色，在基于数组和基于集合的API之间。该方法返回的数组类型是Object[]。
+     * 通过调用toArray(T [])方法重用现有数组；或者调用toArray(IntFunction)方法控制运行时返回数组的类型。
      *
      * @return an array, whose {@linkplain Class#getComponentType runtime component
      * type} is {@code Object}, containing all of the elements in this collection
@@ -363,6 +431,8 @@ public interface Collection<E> extends Iterable<E> {
      * <pre>
      *     String[] y = x.toArray(String[]::new);</pre>
      *
+     * 个人理解，该方法纯粹是方便返回一个指定类型的数组，因为你可以这么调用：
+     * String[] y = x.toArray(String[]::new);
      * @implSpec
      * The default implementation calls the generator function with zero
      * and then passes the resulting array to {@link #toArray(Object[]) toArray(T[])}.
@@ -388,6 +458,9 @@ public interface Collection<E> extends Iterable<E> {
      * operation).  Returns {@code true} if this collection changed as a
      * result of the call.  (Returns {@code false} if this collection does
      * not permit duplicates and already contains the specified element.)<p>
+     * 确保集合包含指定的元素。如果方法调用后，集合改变了，则返回true
+     * （换句话说，就是集合原来没有该元素，成功添加该元素会返回true）。
+     * 如果集合不允许包含重复元素，并且在方法调用前已经包含了该元素，方法会返回false。
      *
      * Collections that support this operation may place limitations on what
      * elements may be added to this collection.  In particular, some
@@ -395,12 +468,16 @@ public interface Collection<E> extends Iterable<E> {
      * impose restrictions on the type of elements that may be added.
      * Collection classes should clearly specify in their documentation any
      * restrictions on what elements may be added.<p>
+     * 支持该操作的集合可能对被添加的元素有一些限制。通常来说，有些集合不允许添加null元素，
+     * 有些则对添加的元素类型有所限制。集合实现类应该在文档中清楚的表名添加元素的限制。
      *
      * If a collection refuses to add a particular element for any reason
      * other than that it already contains the element, it <i>must</i> throw
      * an exception (rather than returning {@code false}).  This preserves
      * the invariant that a collection always contains the specified element
      * after this call returns.
+     * 如果集合拒绝添加元素的原因，是除了已经包含该元素以外的其他任何原因，集合都必须抛出异常，而不是返回false。
+     * 这一点确保了集合的定式：如果该方法成功返回（无论返回true还是false），那么参数对象一定包含在集合中。
      *
      * @param e element whose presence in this collection is to be ensured
      * @return {@code true} if this collection changed as a result of the
